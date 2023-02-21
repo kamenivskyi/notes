@@ -5,30 +5,36 @@
       v-model:value="message"
       placeholder="Добавити нотатку"
     />
-    <Button type="primary">Добавити</Button>
+    <Button @click="addNewNote" type="primary">Добавити</Button>
   </InputGroup>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
+import { v4 as uuid } from "uuid";
 import Input from "ant-design-vue/lib/input";
 import { InputGroup } from "ant-design-vue/lib/input";
 import Button from "ant-design-vue/lib/button";
-import { defineComponent, ref } from "vue";
+import { ref } from "vue";
+import {
+  setDoc,
+  collection,
+  doc,
+  addDoc,
+  serverTimestamp,
+} from "@firebase/firestore";
+import { db } from "@/firebase/firebaseConfig";
 
-export default defineComponent({
-  setup() {
-    const message = ref("");
+const message = ref("");
 
-    return {
-      message,
-    };
-  },
-  components: {
-    Input,
-    InputGroup,
-    Button,
-  },
-});
+const addNewNote = async () => {
+  console.log("message: ", message);
+  await addDoc(collection(db, "notes"), {
+    note: message.value,
+    todos: [],
+    timestamp: serverTimestamp(),
+  });
+  message.value = "";
+};
 </script>
 
 <style scoped>
