@@ -6,15 +6,20 @@ import { ref } from "vue";
 import type { INote } from "@/interfaces";
 
 const item = ref<INote>({ note: "", todos: [] });
+const loading = ref(false);
 
-function watchNewNote(note: INote) {
+function onAddNewNote(note: INote) {
   item.value = note;
+}
+
+function onLoading(event: boolean) {
+  loading.value = event;
 }
 </script>
 
 <template>
   <MainLayout>
-    <AddNoteForm @newNote="watchNewNote" />
-    <NotesList :newNote="item" />
+    <AddNoteForm @newNote="onAddNewNote" :loading="loading" />
+    <NotesList :newNote="item" @loading="onLoading" />
   </MainLayout>
 </template>

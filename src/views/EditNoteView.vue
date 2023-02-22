@@ -14,38 +14,41 @@
         >Add todo</Button
       >
     </InputGroup>
-    <List
-      class="todos"
-      size="small"
-      bordered
-      :data-source="todos"
-      :locale="{ emptyText: 'No todos yet' }"
+    <template v-if="loading">
+      <Spinner />
+    </template>
+    <template v-else>
+      <List
+        class="todos"
+        size="small"
+        bordered
+        :data-source="todos"
+        :locale="{ emptyText: EMPTY_TODOS_MESSAGE }"
+      >
+        <template #renderItem="{ item }">
+          <ListItem
+            >{{ item.title }}
+            <a
+              @click.prevent="removeItem(item.id)"
+              class="remove-btn"
+              href=""
+              title="Remove todo"
+            >
+              <DeleteOutlined class="icon-remove" />
+            </a>
+          </ListItem>
+        </template>
+      </List>
+    </template>
+    <Button :block="true" :disabled="loading" @click="onSaveChangesClick"
+      >Save changes</Button
     >
-      <template #renderItem="{ item }">
-        <ListItem
-          >{{ item.title }}
-          <a
-            @click.prevent="removeItem(item.id)"
-            class="remove-btn"
-            href=""
-            title="Remove todo"
-          >
-            <DeleteOutlined class="icon-remove" />
-          </a>
-        </ListItem>
-      </template>
-    </List>
-
-    <Button :block="true" @click="saveChanges">Save changes</Button>
   </MainLayout>
 </template>
 
 <script setup lang="ts">
 import MainLayout from "@/components/MainLayout.vue";
-import { db } from "@/firebase/firebaseConfig";
-import type { INote } from "@/interfaces";
-import { doc, getDoc, setDoc, type DocumentData } from "@firebase/firestore";
-import { watchEffect, ref, reactive } from "vue";
+import { watchEffect, ref } from "vue";
 import { useRoute } from "vue-router";
 import {
   Input,
@@ -58,30 +61,20 @@ import {
 import { DeleteOutlined } from "@ant-design/icons-vue";
 import type { ITodo } from "@/interfaces";
 import { createTodo } from "@/utils";
-import { NOTES_COLLECTION_NAME } from "@/constants";
+import { getNoteData, saveChanges } from "@/api";
+import Spinner from "@/components/Spinner.vue";
+import { EMPTY_TODOS_MESSAGE } from "@/constants";
 
 const note = ref("");
 const todos = ref<ITodo[]>([]);
 const todoField = ref("");
+const loading = ref(false);
 const route = useRoute();
 
-async function getNoteData() {
-  try {
-    const noteRef = doc(
-      db,
-      NOTES_COLLECTION_NAME,
-      route.params.noteId as string
-    );
-    const data = (await getDoc(noteRef)).data();
-
-    return data;
-  } catch (error) {
-    console.log("Error:", error);
-  }
-}
-
 async function populateNoteData() {
-  const info = await getNoteData();
+  loading.value = true;
+  const info = await getNoteData(route.params.noteId as string);
+  loading.value = false;
 
   if (info?.note) {
     note.value = info.note;
@@ -89,18 +82,12 @@ async function populateNoteData() {
   todos.value = info?.todos;
 }
 
-async function saveChanges() {
+async function onSaveChangesClick() {
   try {
-    const docRef = doc(
-      db,
-      NOTES_COLLECTION_NAME,
-      route.params.noteId as string
-    );
-    await setDoc(
-      docRef,
-      { note: note.value, todos: todos.value },
-      { merge: true }
-    );
+    await saveChanges(route.params.noteId as string, {
+      note: note.value,
+      todos: todos.value,
+    });
     showSuccessMessage();
   } catch (error) {
     showErrorMessage();

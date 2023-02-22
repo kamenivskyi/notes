@@ -6,7 +6,13 @@
       placeholder="Add a note"
       @keyup.enter="addNewNote"
     />
-    <Button @click="addNewNote" class="add-note-btn" type="primary">Add</Button>
+    <Button
+      @click="addNewNote"
+      :disabled="loading"
+      class="add-note-btn"
+      type="primary"
+      >Add</Button
+    >
   </InputGroup>
 </template>
 
@@ -21,6 +27,12 @@ import { uuidv4 } from "@firebase/util";
 import { NOTES_COLLECTION_NAME } from "@/constants";
 import { createNote } from "@/utils";
 
+interface IProps {
+  loading: boolean;
+}
+
+defineProps<IProps>();
+
 const message = ref("");
 const emit = defineEmits(["newNote"]);
 
@@ -28,10 +40,12 @@ const addNewNote = async () => {
   const docId = uuidv4();
   const newNote = createNote(message.value, docId);
 
-  await setDoc(doc(db, NOTES_COLLECTION_NAME, docId), newNote);
-  emit("newNote", newNote);
+  try {
+    await setDoc(doc(db, NOTES_COLLECTION_NAME, docId), newNote);
+    emit("newNote", newNote);
 
-  message.value = "";
+    message.value = "";
+  } catch (error) {}
 };
 </script>
 
