@@ -5,18 +5,10 @@ import ListItemMeta from "ant-design-vue/lib/list/ItemMeta";
 import { ref, createVNode, onMounted, watch } from "vue";
 import { message, Modal } from "ant-design-vue";
 import { useRouter } from "vue-router";
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  orderBy,
-  query,
-} from "@firebase/firestore";
-import { db } from "@/firebase/firebaseConfig";
-import { transformQuerySnapshotToItems, getLimitedList } from "@/utils";
+import { getLimitedList } from "@/utils";
 import type { INote } from "@/interfaces";
-import { NOTES_COLLECTION_NAME, removeNoteModalSettings } from "@/constants";
+import { removeNoteModalSettings } from "@/constants";
+import { getAllNotes, removeFirebaseNoteDocument } from "@/api";
 
 interface IProps {
   newNote: INote;
@@ -27,7 +19,7 @@ const props = defineProps<IProps>();
 const items = ref<INote[]>([]);
 
 onMounted(() => {
-  getAllNotes();
+  populateNotes();
 });
 
 watch(
@@ -36,25 +28,22 @@ watch(
   { deep: true }
 );
 
+async function populateNotes() {
+  items.value = await getAllNotes();
+}
+
 function populateEmittedNote(newNote: INote) {
   items.value.push(newNote);
 }
 
-async function getAllNotes() {
-  const q = query(collection(db, NOTES_COLLECTION_NAME), orderBy("timestamp"));
-  const querySnapshot = await getDocs(q);
-
-  items.value = transformQuerySnapshotToItems(querySnapshot);
-}
-
 const router = useRouter();
 
-const goToEdit = (id: string) => {
-  router.push({ name: "edit", params: { noteId: id } });
+const goToEdit = (noteId: string) => {
+  router.push({ name: "edit", params: { noteId } });
 };
 async function handleRemoveNote(noteId: string) {
   try {
-    await deleteDoc(doc(db, NOTES_COLLECTION_NAME, noteId));
+    await removeFirebaseNoteDocument(noteId);
     removeNoteFromArray(noteId);
     message.success("Successfully removed");
   } catch (error) {
