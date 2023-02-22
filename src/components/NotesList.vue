@@ -1,22 +1,37 @@
+<template>
+  <template v-if="loading"><Spinner /> </template>
+  <template v-else>
+    <List
+      item-layout="horizontal"
+      :data-source="items"
+      :locale="{ emptyText: EMPTY_NOTES_MESSAGE }"
+    >
+      <template #renderItem="{ item }">
+        <NoteItem :item="item" :showConfirmRemoveNote="showConfirmRemoveNote" />
+      </template>
+    </List>
+  </template>
+</template>
+
 <script setup lang="ts">
 import List from "ant-design-vue/lib/list";
-import ListItem from "ant-design-vue/lib/list/Item";
-import ListItemMeta from "ant-design-vue/lib/list/ItemMeta";
-import { ref, createVNode, onMounted, watch } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { message, Modal } from "ant-design-vue";
-import { useRouter } from "vue-router";
-import { getLimitedList } from "@/utils";
 import type { INote } from "@/interfaces";
-import { removeNoteModalSettings } from "@/constants";
+import { EMPTY_NOTES_MESSAGE, removeNoteModalSettings } from "@/constants";
 import { getAllNotes, removeFirebaseNoteDocument } from "@/api";
+import Spinner from "./Spinner.vue";
+import NoteItem from "./NoteItem.vue";
 
 interface IProps {
   newNote: INote;
 }
 
 const props = defineProps<IProps>();
+const emit = defineEmits(["loading"]);
 
 const items = ref<INote[]>([]);
+const loading = ref(false);
 
 onMounted(() => {
   populateNotes();
@@ -29,18 +44,19 @@ watch(
 );
 
 async function populateNotes() {
+  emit("loading", true);
+  loading.value = true;
+
   items.value = await getAllNotes();
+
+  loading.value = false;
+  emit("loading", false);
 }
 
 function populateEmittedNote(newNote: INote) {
   items.value.push(newNote);
 }
 
-const router = useRouter();
-
-const goToEdit = (noteId: string) => {
-  router.push({ name: "edit", params: { noteId } });
-};
 async function handleRemoveNote(noteId: string) {
   try {
     await removeFirebaseNoteDocument(noteId);
@@ -56,47 +72,20 @@ function removeNoteFromArray(noteId: string) {
   items.value = items.value.filter((item) => item.docId !== noteId);
 }
 
-function showConfirmRemoveNote(noteId: string) {
-  Modal.confirm({
-    onOk: () => handleRemoveNote(noteId),
-    ...removeNoteModalSettings,
-  });
+function showConfirmRemoveNote(noteId?: string) {
+  if (noteId) {
+    Modal.confirm({
+      onOk: () => handleRemoveNote(noteId),
+      ...removeNoteModalSettings,
+    });
+  }
 }
 </script>
 
-<template>
-  <List
-    item-layout="horizontal"
-    :data-source="items"
-    :locale="{ emptyText: 'No notes yet' }"
-  >
-    <template #renderItem="{ item }">
-      <ListItem>
-        <ListItemMeta>
-          <template #title>
-            <p>{{ item.note }}</p>
-            <ul>
-              <li v-for="todo in getLimitedList(item.todos)">
-                {{ todo.title }}
-              </li>
-            </ul>
-          </template>
-        </ListItemMeta>
-        <template #actions>
-          <a key="list-edit" @click.prevent="goToEdit(item.docId)">edit</a>
-          <a
-            @click.prevent="showConfirmRemoveNote(item.docId)"
-            key="list-remove"
-          >
-            delete
-          </a>
-        </template>
-      </ListItem>
-    </template>
-  </List>
-</template>
-
 <style scoped>
+.note-title {
+  font-weight: 600;
+}
 .todo-item {
   padding-left: 15px;
 }

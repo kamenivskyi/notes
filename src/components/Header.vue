@@ -1,7 +1,9 @@
 <template>
   <header>
     <nav>
-      <RouterLink class="nav-link" to="/"><Button> Home </Button></RouterLink>
+      <RouterLink class="nav-link" to="/">
+        <Button class="nav-button">Home </Button>
+      </RouterLink>
     </nav>
   </header>
 </template>
@@ -12,8 +14,9 @@ import { Button } from "ant-design-vue";
 
 <style scoped>
 .nav-link {
-  display: block;
   font-size: 19px;
+}
+.nav-button {
   margin-bottom: 15px;
 }
 </style>
