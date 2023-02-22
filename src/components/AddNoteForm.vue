@@ -1,44 +1,45 @@
 <template>
   <InputGroup compact>
     <Input
-      class="add-note-input"
       v-model:value="message"
-      placeholder="Добавити нотатку"
+      class="add-note-input"
+      placeholder="Add a note"
+      @keyup.enter="addNewNote"
     />
-    <Button @click="addNewNote" type="primary">Добавити</Button>
+    <Button @click="addNewNote" class="add-note-btn" type="primary">Add</Button>
   </InputGroup>
 </template>
 
 <script setup lang="ts">
-import { v4 as uuid } from "uuid";
 import Input from "ant-design-vue/lib/input";
 import { InputGroup } from "ant-design-vue/lib/input";
 import Button from "ant-design-vue/lib/button";
 import { ref } from "vue";
-import {
-  setDoc,
-  collection,
-  doc,
-  addDoc,
-  serverTimestamp,
-} from "@firebase/firestore";
+import { setDoc, doc } from "@firebase/firestore";
 import { db } from "@/firebase/firebaseConfig";
+import { uuidv4 } from "@firebase/util";
+import { NOTES_COLLECTION_NAME } from "@/constants";
+import { createNote } from "@/utils";
 
 const message = ref("");
+const emit = defineEmits(["newNote"]);
 
 const addNewNote = async () => {
-  console.log("message: ", message);
-  await addDoc(collection(db, "notes"), {
-    note: message.value,
-    todos: [],
-    timestamp: serverTimestamp(),
-  });
+  const docId = uuidv4();
+  const newNote = createNote(message.value, docId);
+
+  await setDoc(doc(db, NOTES_COLLECTION_NAME, docId), newNote);
+  emit("newNote", newNote);
+
   message.value = "";
 };
 </script>
 
 <style scoped>
 input.add-note-input {
-  width: calc(100% - 200px);
+  width: calc(100% - 150px);
+}
+.add-note-btn {
+  width: 150px;
 }
 </style>
