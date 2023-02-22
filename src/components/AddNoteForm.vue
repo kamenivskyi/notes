@@ -10,18 +10,11 @@
 </template>
 
 <script setup lang="ts">
-import { v4 as uuid } from "uuid";
 import Input from "ant-design-vue/lib/input";
 import { InputGroup } from "ant-design-vue/lib/input";
 import Button from "ant-design-vue/lib/button";
 import { ref } from "vue";
-import {
-  setDoc,
-  collection,
-  doc,
-  addDoc,
-  serverTimestamp,
-} from "@firebase/firestore";
+import { collection, addDoc, serverTimestamp } from "@firebase/firestore";
 import { db } from "@/firebase/firebaseConfig";
 
 const message = ref("");
