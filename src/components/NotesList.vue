@@ -2,31 +2,47 @@
 import List from "ant-design-vue/lib/list";
 import ListItem from "ant-design-vue/lib/list/Item";
 import ListItemMeta from "ant-design-vue/lib/list/ItemMeta";
-import { ref, createVNode, onMounted } from "vue";
+import { ref, createVNode, onMounted, watch } from "vue";
 import { message, Modal } from "ant-design-vue";
 import { useRouter } from "vue-router";
-import { collection, deleteDoc, doc, getDocs } from "@firebase/firestore";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  orderBy,
+  query,
+} from "@firebase/firestore";
 import { db } from "@/firebase/firebaseConfig";
-import { transformQuerySnapshotToItems } from "@/utils";
+import { transformQuerySnapshotToItems, getLimitedList } from "@/utils";
+import type { INote } from "@/interfaces";
+import { NOTES_COLLECTION_NAME, removeNoteModalSettings } from "@/constants";
 
-const removeNoteModalSettings = {
-  title: "Confirm",
-  content: "Delete the note?",
-  okText: "Ok",
-  cancelText: "Cancel",
-};
+interface IProps {
+  newNote: INote;
+}
 
-const items = ref<any[]>([]);
+const props = defineProps<IProps>();
+
+const items = ref<INote[]>([]);
 
 onMounted(() => {
-  console.log("mounted");
   getAllNotes();
 });
 
+watch(
+  () => props.newNote,
+  (newNote: INote) => populateEmittedNote(newNote),
+  { deep: true }
+);
+
+function populateEmittedNote(newNote: INote) {
+  items.value.push(newNote);
+}
+
 async function getAllNotes() {
-  const notesColName = "notes";
-  const colRef = collection(db, notesColName);
-  const querySnapshot = await getDocs(colRef);
+  const q = query(collection(db, NOTES_COLLECTION_NAME), orderBy("timestamp"));
+  const querySnapshot = await getDocs(q);
 
   items.value = transformQuerySnapshotToItems(querySnapshot);
 }
@@ -38,7 +54,7 @@ const goToEdit = (id: string) => {
 };
 async function handleRemoveNote(noteId: string) {
   try {
-    await deleteDoc(doc(db, "notes", noteId));
+    await deleteDoc(doc(db, NOTES_COLLECTION_NAME, noteId));
     removeNoteFromArray(noteId);
     message.success("Successfully removed");
   } catch (error) {
@@ -52,12 +68,8 @@ function removeNoteFromArray(noteId: string) {
 }
 
 function showConfirmRemoveNote(noteId: string) {
-  console.log("noteId: ", noteId);
   Modal.confirm({
     onOk: () => handleRemoveNote(noteId),
-    onCancel: () => {
-      console.log("cancel");
-    },
     ...removeNoteModalSettings,
   });
 }
@@ -71,9 +83,14 @@ function showConfirmRemoveNote(noteId: string) {
   >
     <template #renderItem="{ item }">
       <ListItem>
-        <ListItemMeta description="test">
+        <ListItemMeta>
           <template #title>
             <p>{{ item.note }}</p>
+            <ul>
+              <li v-for="todo in getLimitedList(item.todos)">
+                {{ todo.title }}
+              </li>
+            </ul>
           </template>
         </ListItemMeta>
         <template #actions>
@@ -89,3 +106,9 @@ function showConfirmRemoveNote(noteId: string) {
     </template>
   </List>
 </template>
+
+<style scoped>
+.todo-item {
+  padding-left: 15px;
+}
+</style>

@@ -57,7 +57,8 @@ import {
 } from "ant-design-vue";
 import { DeleteOutlined } from "@ant-design/icons-vue";
 import type { ITodo } from "@/interfaces";
-import { v4 as uuidv4 } from "uuid";
+import { createTodo } from "@/utils";
+import { NOTES_COLLECTION_NAME } from "@/constants";
 
 const note = ref("");
 const todos = ref<ITodo[]>([]);
@@ -66,7 +67,11 @@ const route = useRoute();
 
 async function getNoteData() {
   try {
-    const noteRef = doc(db, "notes", route.params.noteId as string);
+    const noteRef = doc(
+      db,
+      NOTES_COLLECTION_NAME,
+      route.params.noteId as string
+    );
     const data = (await getDoc(noteRef)).data();
 
     return data;
@@ -86,7 +91,11 @@ async function populateNoteData() {
 
 async function saveChanges() {
   try {
-    const docRef = doc(db, "notes", route.params.noteId as string);
+    const docRef = doc(
+      db,
+      NOTES_COLLECTION_NAME,
+      route.params.noteId as string
+    );
     await setDoc(
       docRef,
       { note: note.value, todos: todos.value },
@@ -99,16 +108,9 @@ async function saveChanges() {
   }
 }
 
-function createTodo() {
-  return {
-    title: todoField.value,
-    id: uuidv4(),
-  };
-}
-
 async function addTodo() {
   if (todoField.value.trim().length > 0) {
-    todos.value.push(createTodo());
+    todos.value.push(createTodo(todoField.value));
     todoField.value = "";
   }
 }
