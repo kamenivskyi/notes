@@ -11,7 +11,7 @@ import { Modal } from "ant-design-vue";
 
 // export default defineComponent({
 //   setup() {
-const visible = ref<boolean>(false);
+const visible = ref(false);
 
 const showModal = () => {
   visible.value = true;

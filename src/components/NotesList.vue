@@ -60,20 +60,20 @@ const confirm = () => {
   });
 };
 
-const data: DataItem[] = [
-  {
-    title: "Ant Design Title 1",
-  },
-  {
-    title: "Ant Design Title 2",
-  },
-  {
-    title: "Ant Design Title 3",
-  },
-  {
-    title: "Ant Design Title 4",
-  },
-];
+// const data: DataItem[] = [
+//   {
+//     title: "Ant Design Title 1",
+//   },
+//   {
+//     title: "Ant Design Title 2",
+//   },
+//   {
+//     title: "Ant Design Title 3",
+//   },
+//   {
+//     title: "Ant Design Title 4",
+//   },
+// ];
 </script>
 
 <template>
@@ -94,10 +94,10 @@ const data: DataItem[] = [
       </ListItem>
     </template>
   </List>
-  <ConfirmModal
+  <!-- <ConfirmModal
     :showModal="showModal"
     :hideModal="hideModal"
     :confirm="confirm"
     :visible="visible"
-  />
+  /> -->
 </template>
